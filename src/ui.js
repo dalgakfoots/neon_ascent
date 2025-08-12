@@ -309,59 +309,112 @@ function drawTouchControls(state) {
 
 function handleTouchInput(state, isTouchStart) {
   if (isTouchStart && touches.length > 0) {
-    let x = touches[0].x;
-    let y = touches[0].y;
-    console.log("Touch coordinates:", { x, y });
-    console.log("Jump button area:", {
-      x: state.jumpButton.x,
-      y: state.jumpButton.y,
-      w: state.jumpButton.w,
-      h: state.jumpButton.h,
-    });
-    state.leftButton.active =
-      x > state.leftButton.x &&
-      x < state.leftButton.x + state.leftButton.w &&
-      y > state.leftButton.y &&
-      y < state.leftButton.y + state.leftButton.h;
-    state.rightButton.active =
-      x > state.rightButton.x &&
-      x < state.rightButton.x + state.rightButton.w &&
-      y > state.rightButton.y &&
-      y < state.rightButton.y + state.rightButton.h;
-    state.jumpButton.active =
-      x > state.jumpButton.x &&
-      x < state.jumpButton.x + state.jumpButton.w &&
-      y > state.jumpButton.y &&
-      y < state.jumpButton.y + state.jumpButton.h;
+    // 모든 터치를 확인하여 각 버튼 상태 업데이트
+    let leftActive = false;
+    let rightActive = false;
+    let jumpActive = false;
+    let skillActive = false;
+
+    // 모든 활성 터치를 확인
+    for (let i = 0; i < touches.length; i++) {
+      let x = touches[i].x;
+      let y = touches[i].y;
+
+      console.log(`Touch ${i} coordinates:`, { x, y });
+
+      // 좌측 이동 버튼 확인
+      if (
+        x > state.leftButton.x &&
+        x < state.leftButton.x + state.leftButton.w &&
+        y > state.leftButton.y &&
+        y < state.leftButton.y + state.leftButton.h
+      ) {
+        leftActive = true;
+      }
+
+      // 우측 이동 버튼 확인
+      if (
+        x > state.rightButton.x &&
+        x < state.rightButton.x + state.rightButton.w &&
+        y > state.rightButton.y &&
+        y < state.rightButton.y + state.rightButton.h
+      ) {
+        rightActive = true;
+      }
+
+      // 점프 버튼 확인
+      if (
+        x > state.jumpButton.x &&
+        x < state.jumpButton.x + state.jumpButton.w &&
+        y > state.jumpButton.y &&
+        y < state.jumpButton.y + state.jumpButton.h
+      ) {
+        jumpActive = true;
+      }
+
+      // 스킬 버튼 확인 (표시되는 경우에만)
+      if (
+        state.passiveItemsCount > 0 &&
+        !state.skillSelection &&
+        !state.gameOver
+      ) {
+        if (
+          x > state.skillButton.x &&
+          x < state.skillButton.x + state.skillButton.w &&
+          y > state.skillButton.y &&
+          y < state.skillButton.y + state.skillButton.h
+        ) {
+          skillActive = true;
+        }
+      }
+    }
+
+    // 버튼 상태 업데이트
+    state.leftButton.active = leftActive;
+    state.rightButton.active = rightActive;
+
+    // 점프 버튼 상태 업데이트 (실제 점프 실행은 별도 처리)
+    state.jumpButton.active = jumpActive;
+
+    // 스킬 버튼 상태 업데이트 (실제 스킬 실행은 별도 처리)
     if (
       state.passiveItemsCount > 0 &&
       !state.skillSelection &&
       !state.gameOver
     ) {
-      state.skillButton.active =
-        x > state.skillButton.x &&
-        x < state.skillButton.x + state.skillButton.w &&
-        y > state.skillButton.y &&
-        y < state.skillButton.y + state.skillButton.h;
-      if (state.skillButton.active) {
-        console.log("Skill button triggered, entering skill selection");
+      if (skillActive && !state.skillButton.wasActive) {
+        // 스킬 실행
         state.passiveItemsCount--;
         state.skillSelection = true;
         state.skillChoices = generateSkillChoices();
+        console.log("Skill button triggered via touch");
       }
+      state.skillButton.active = skillActive;
+      state.skillButton.wasActive = skillActive;
+    } else {
+      state.skillButton.active = false;
+      state.skillButton.wasActive = false;
     }
-    console.log("Jump button touched:", state.jumpButton.active);
   } else if (!isTouchStart) {
-    state.leftButton.active = false;
-    state.rightButton.active = false;
-    state.jumpButton.active = false;
-    state.skillButton.active = false;
+    // 터치가 끝났을 때는 현재 남은 터치들을 다시 확인
+    if (touches.length === 0) {
+      // 모든 터치가 끝났을 때만 버튼 비활성화
+      state.leftButton.active = false;
+      state.rightButton.active = false;
+      state.jumpButton.active = false;
+      state.skillButton.active = false;
+    } else {
+      // 아직 터치가 남아있다면 다시 확인
+      handleTouchInput(state, true);
+    }
   }
+
   console.log("Button states:", {
-    leftButton: state.leftButton,
-    rightButton: state.rightButton,
-    jumpButton: state.jumpButton,
-    skillButton: state.skillButton,
+    leftButton: state.leftButton.active,
+    rightButton: state.rightButton.active,
+    jumpButton: state.jumpButton.active,
+    skillButton: state.skillButton.active,
+    touchCount: touches.length,
   });
 }
 

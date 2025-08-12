@@ -11,6 +11,7 @@ function initPlayer(state) {
 }
 
 function updatePlayer(state) {
+  // 좌우 이동 처리
   if (keyIsDown(LEFT_ARROW) || state.leftButton.active) {
     state.avatarX -= state.moveSpeed;
     if (state.avatarX < state.avatarSize) state.avatarX = state.avatarSize;
@@ -20,8 +21,12 @@ function updatePlayer(state) {
     if (state.avatarX > state.canvasWidth - state.avatarSize)
       state.avatarX = state.canvasWidth - state.avatarSize;
   }
+
+  // 점프 처리 - 터치와 키보드 모두 처리
+  // 터치 점프: 버튼이 활성화되었고 이전 프레임에서 비활성화 상태였다면 점프
   if (
     state.jumpButton.active &&
+    !state.jumpButton.wasActive &&
     state.jumpCount < state.maxJumps &&
     !state.gameOver &&
     !state.skillSelection
@@ -29,9 +34,13 @@ function updatePlayer(state) {
     state.velocityY = -10;
     state.isOnPlatform = false;
     state.jumpCount++;
-    state.jumpButton.active = false; // Prevent continuous jumping
+    console.log("Jump executed via touch, jumpCount:", state.jumpCount);
   }
 
+  // 이전 프레임의 점프 버튼 상태 저장
+  state.jumpButton.wasActive = state.jumpButton.active;
+
+  // 중력 적용
   if (!state.isOnPlatform) {
     state.velocityY += state.gravity;
     state.avatarY += state.velocityY;
